@@ -634,9 +634,14 @@ def run(args):
         logging.warning(
             "normal BAM not supplied; normal allele depths for MNP will be zero"
         )
+    
+    m.muts['PhaseID'] = np.nan
+    m.muts['GermlineID'] = np.nan
 
-    smuts = []
-    gmuts = []
+    # Initializing smuts and gmuts with header-only dataframes.
+    smuts = [m.muts.iloc[:0]]
+    gmuts = [m.muts.iloc[:0]]
+
     m.muts["maf_idx"] = [set([i]) for i in m.muts.index]
 
     # use the original chromosome order (i.e. sort = False)
@@ -741,43 +746,41 @@ def run(args):
         cols_to_keep.insert(0, "ccf_hat")
 
     # write somatic phased mutations
-    if sum(pi) > 0:
-        logging.info("found {} somatic phased mutations".format(sum(pi)))
-        smuts = smuts[pi].reset_index(drop=True)
-        count = list(smuts.columns[smuts.columns.str.endswith("_count")])
-        smuts[count] = smuts[count].fillna(value=0).astype(int)
-        logging.info("writing {}.phased.vcf".format(args.tumor_name))
-        if t.vcf:
-            write_phase_vcf(
-                args.tumor_name + ".phased.vcf", smuts, t, cols_to_keep
-            )
-        else:
-            write_phase_vcf_from_scratch(
-                args.tumor_name + ".phased.vcf", t.bam_sm, n.bam_sm, smuts
-            )
-        logging.info("writing {}.phased.maflite.tsv".format(args.tumor_name))
-        write_phase_maflite(
-            args.tumor_name + ".phased.maflite.tsv", smuts, cols_to_keep
+    logging.info("found {} somatic phased mutations".format(sum(pi)))
+    smuts = smuts[pi].reset_index(drop=True)
+    count = list(smuts.columns[smuts.columns.str.endswith("_count")])
+    smuts[count] = smuts[count].fillna(value=0).astype(int)
+    logging.info("writing {}.phased.vcf".format(args.tumor_name))
+    if t.vcf:
+        write_phase_vcf(
+            args.tumor_name + ".phased.vcf", smuts, t, cols_to_keep
         )
+    else:
+        write_phase_vcf_from_scratch(
+            args.tumor_name + ".phased.vcf", t.bam_sm, n.bam_sm, smuts
+        )
+    logging.info("writing {}.phased.maflite.tsv".format(args.tumor_name))
+    write_phase_maflite(
+        args.tumor_name + ".phased.maflite.tsv", smuts, cols_to_keep
+    )
 
-        # write germline variants phased with somatic variants
-        if gmuts:
-            gmuts = pd.concat(gmuts).reset_index(drop=True)
-            logging.info(
-                "found {} phased germline mutations".format(len(gmuts.index))
-            )
-            count = list(gmuts.columns[gmuts.columns.str.endswith("_count")])
-            gmuts[count] = gmuts[count].astype(int)
-            logging.info("writing {}.phased.vcf".format(args.normal_name))
-            write_phase_vcf(
-                args.normal_name + ".phased.vcf", gmuts, n, ["GermlineID"]
-            )
-            logging.info(
-                "writing {}.phased.maflite.tsv".format(args.normal_name)
-            )
-            write_phase_maflite(
-                args.normal_name + ".phased.maflite.tsv",
-                gmuts,
-                ["genotype", "GermlineID"],
-            )
+    # write germline variants phased with somatic variants
+    gmuts = pd.concat(gmuts).reset_index(drop=True)
+    logging.info(
+        "found {} phased germline mutations".format(len(gmuts.index))
+    )
+    count = list(gmuts.columns[gmuts.columns.str.endswith("_count")])
+    gmuts[count] = gmuts[count].astype(int)
+    logging.info("writing {}.phased.vcf".format(args.normal_name))
+    write_phase_vcf(
+        args.normal_name + ".phased.vcf", gmuts, n, ["GermlineID"]
+    )
+    logging.info(
+        "writing {}.phased.maflite.tsv".format(args.normal_name)
+    )
+    write_phase_maflite(
+        args.normal_name + ".phased.maflite.tsv",
+        gmuts,
+        ["genotype", "GermlineID"],
+    )
     logging.info("all done!")

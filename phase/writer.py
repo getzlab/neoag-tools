@@ -76,14 +76,14 @@ def write_phase_vcf(outname, df, sample, extra_cols=[]):
                 altc = row['t_alt_count']
                 v.samples[t_name]['AD'] = (refc, altc)
                 v.samples[t_name]['DP'] = refc + altc
-                v.samples[t_name]['AF'] = altc/float(refc+altc)
+                v.samples[t_name]['AF'] = altc/max(float(refc+altc), 1.0)
                 v.samples[t_name]['GT'] = (0, 1)
                 if n_name and 'n_ref_count' in df:
                     refc = row['n_ref_count']
                     altc = row['n_alt_count']
                     v.samples[n_name]['AD'] = (refc, altc)
                     v.samples[n_name]['DP'] = refc + altc
-                    v.samples[n_name]['AF'] = altc/max(float(refc+altc),1.0)
+                    v.samples[n_name]['AF'] = altc/max(float(refc+altc), 1.0)
                     v.samples[n_name]['GT'] = (0, 0)
                 if len(row['maf_idx']) > 1:
                     v.info['MNPVariantType'] = row['Variant_Type']
