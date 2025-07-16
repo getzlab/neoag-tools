@@ -197,9 +197,7 @@ def mutate_sequence(
         else:
             if m["Variant_Classification"] in coding_mut_class:
                 logging.warning(
-                    "skipping {}:{}; position not in {}".format(
-                        m["Chromosome"], m["Start_position"], txid
-                    )
+                    f"skipping {m['Chromosome']}:{m['Start_position']}; position not in {txid}"
                 )
             continue
         if m["Variant_Type"] == "DEL":
@@ -493,7 +491,12 @@ def run(args):
         germline_mutations[PHASE_ID_COL] = np.nan
     else:
         if PHASE_ID_COL not in mutations:
-            raise Exception('cannot find "PhaseID" in: ' + args.input_maf)
+            if args.require_phasing:
+                raise Exception(
+                    f'cannot find "{PHASE_ID_COL}" in: {args.input_maf}'
+                )
+            else:
+                mutations[PHASE_ID_COL] = np.nan
         if PHASE_ID_COL not in germline_mutations:
             germline_mutations[PHASE_ID_COL] = np.nan
 
@@ -504,7 +507,7 @@ def run(args):
     else:
         if CLONAL_STRUCTURE_COL not in mutations:
             raise Exception(
-                'cannot find "ClonalStructure" in: ' + args.input_maf
+                f'cannot find "{CLONAL_STRUCTURE_COL}" in: {args.input_maf}'
             )
         if CLONAL_STRUCTURE_COL not in germline_mutations:
             germline_mutations[CLONAL_STRUCTURE_COL] = np.nan
@@ -519,9 +522,7 @@ def run(args):
     transcripts = list(mutations["Annotation_Transcript"].unique())
     # load transcript structures from GTF
     logging.info(
-        "loading {} transcripts with mutations from GTF".format(
-            len(transcripts)
-        )
+        f"loading {len(transcripts)} transcripts with mutations from GTF"
     )
 
     DEBUG_CACHE = Path("cache.pickle")
@@ -532,7 +533,7 @@ def run(args):
         pickle.dump(gtf, DEBUG_CACHE.open("wb"))
 
     logging.info(
-        "finished loading {} transcripts from GTF".format(len(gtf.transcripts))
+        f"finished loading {len(gtf.transcripts)} transcripts from GTF"
     )
 
     # exit if there are no coding transcripts with return code 0
@@ -547,7 +548,7 @@ def run(args):
     # load codon table if supplied
     codon_table = standard_code
     if args.codon_table:
-        logging.info("custom codon table supplied: {}".format(args.codon_table))
+        logging.info(f"custom codon table supplied: {args.codon_table}")
         codon_table = create_codon_table(args.codon_table)
 
     gene_tpm = dict()

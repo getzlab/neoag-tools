@@ -205,6 +205,11 @@ def build_parser():
         help="Ignore phasing information during peptide translation (default=off)",
     )
     antigen.add_argument(
+        "--require-phasing",
+        action="store_true",
+        help="Require the phasing data to be present, and crash the program if it is not (default=off)",
+    )
+    antigen.add_argument(
         "--tumor-name-list",
         help="A list of alternative names for the tumor sample.",
         default="",
